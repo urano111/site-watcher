@@ -1,0 +1,46 @@
+name: Check Website Update
+
+on:
+  # 定期実行の設定 (UTC時間基準)
+  # 下記は「毎時0分」に実行する例です。必要に応じて変更してください。
+  schedule:
+    - cron: '0 * * * *'
+  
+  # GitHubの画面上から手動で実行できるようにする設定（テスト時に便利です）
+  workflow_dispatch:
+
+# last_hash.txt をリポジトリに上書き保存するための権限
+permissions:
+  contents: write
+
+jobs:
+  check-update:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Run check script
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+        run: python check_site.py
+
+      - name: Commit and push changes
+        # check_site.py が last_hash.txt を書き換えた場合のみコミットしてプッシュする
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add last_hash.txt
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update last_hash.txt" && git push)
