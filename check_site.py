@@ -100,7 +100,7 @@ def main():
         logging.info("変更を検知しました。")
         
         # 初回実行時（last_hashが空）は通知をスキップし、基準となるハッシュの保存のみ行う
-        if last_hash != "":
+        if True:  # テスト用：強制通知
             # 通知を送信
             success = send_slack_notification()
             if success:
